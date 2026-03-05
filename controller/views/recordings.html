@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agora | Recording Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --bg-main: #f8fafc;
+            --bg-side: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 12px;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar Navigation */
+        #sidebar {
+            width: 280px;
+            background: var(--bg-side);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+        }
+
+        .brand {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        .folder-tree { flex: 1; overflow-y: auto; }
+
+        .folder {
+            cursor: pointer;
+            padding: 10px 12px;
+            border-radius: var(--radius);
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .folder:hover { background: #f1f5f9; color: var(--text-main); }
+        .folder.active { background: #eff6ff; color: var(--primary); font-weight: 600; }
+
+        /* Main Content Area */
+        #main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        header {
+            padding: 20px 32px;
+            background: #fff;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Breadcrumb Styling */
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .breadcrumb-item { cursor: pointer; transition: color 0.2s; }
+        .breadcrumb-item:hover { color: var(--primary); }
+        .breadcrumb-item.active { color: var(--text-main); font-weight: 600; cursor: default; }
+
+        #files-grid {
+            padding: 32px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        /* Cards */
+        .file-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .file-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+            border-color: var(--primary);
+        }
+
+        .file-icon {
+            width: 100%;
+            height: 100px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .file-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; word-break: break-all; }
+        .file-meta { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* Modal */
+        #modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #modalContent { width: 90%; max-width: 900px; border-radius: 16px; overflow: hidden; background: #000; }
+        .close-btn { position: absolute; top: 20px; right: 20px; color: white; cursor: pointer; font-size: 2rem; }
+    </style>
+</head>
+
+<body>
+
+<aside id="sidebar">
+    <div class="brand" onclick="location.reload()">
+        <span>📁</span> Recording Explorer
+    </div>
+    <div id="folders" class="folder-tree"></div>
+</aside>
+
+<main id="main-content">
+    <header>
+        <div id="breadcrumb-container" class="breadcrumbs">
+            <span class="breadcrumb-item active">Select a Date</span>
+        </div>
+        <div style="color: var(--text-muted); font-size: 0.8rem;">v1.0 Storage</div>
+    </header>
+    
+    <div id="files-grid"></div>
+</main>
+
+<div id="modal" onclick="closePlayer()">
+    <div class="close-btn">&times;</div>
+    <div id="modalContent" onclick="event.stopPropagation()">
+        <video id="player" controls style="width:100%"></video>
+    </div>
+</div>
+
+<script>
+let fullTree = [];
+
+async function loadTree() {
+    const res = await fetch("/api/tree");
+    fullTree = await res.json();
+    const root = document.getElementById("folders");
+    root.innerHTML = "";
+    fullTree.forEach(f => renderFolder(f, root));
+    updateBreadcrumbs([]);
+}
+
+function renderFolder(folder, parent) {
+    const div = document.createElement("div");
+    div.className = "folder";
+    div.innerHTML = `<span>📁</span> ${folder.name}`;
+    
+    div.onclick = (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.folder').forEach(el => el.classList.remove('active'));
+        div.classList.add('active');
+        
+        // Update breadcrumb and show grid
+        updateBreadcrumbs([{ name: folder.name, data: folder }]);
+        
+        if (folder.children && folder.children.length > 0) {
+            displayGrid(folder.children, 'folder', folder.name);
+        } else {
+            loadFiles(folder.path, folder.name);
+        }
+    };
+    parent.appendChild(div);
+}
+
+function updateBreadcrumbs(pathArray) {
+    const container = document.getElementById("breadcrumb-container");
+    container.innerHTML = `<span class="breadcrumb-item" onclick="location.reload()">Recording</span>`;
+    
+    pathArray.forEach((item, index) => {
+        container.innerHTML += ` <span style="color:#cbd5e1">/</span> `;
+        const span = document.createElement("span");
+        span.className = "breadcrumb-item" + (index === pathArray.length - 1 ? " active" : "");
+        span.textContent = item.name;
+        span.onclick = () => {
+            if(item.data.children) displayGrid(item.data.children, 'folder', item.name);
+            else loadFiles(item.data.path, item.name);
+        };
+        container.appendChild(span);
+    });
+}
+
+function displayGrid(items, type, parentName) {
+    const grid = document.getElementById("files-grid");
+    grid.innerHTML = "";
+
+    items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "file-card";
+        const isFolder = type === 'folder';
+        
+        card.innerHTML = `
+            <div class="file-icon" style="background: ${isFolder ? '#eff6ff' : '#f8fafc'}; color: ${isFolder ? '#3b82f6' : '#64748b'}">
+                ${isFolder ? '📂' : '🎬'}
+            </div>
+            <div class="file-name">${item.name}</div>
+            <div class="file-meta">${isFolder ? 'Channel Folder' : (item.sizeMB + ' MB • MP4')}</div>
+        `;
+
+        card.onclick = () => {
+            if (isFolder) {
+                updateBreadcrumbs([{name: parentName}, {name: item.name, data: item}]);
+                loadFiles(item.path, item.name);
+            } else {
+                play(item.path);
+            }
+        };
+        grid.appendChild(card);
+    });
+}
+
+async function loadFiles(path, folderName) {
+    const grid = document.getElementById("files-grid");
+    grid.innerHTML = "<div>Loading files...</div>";
+    
+    const res = await fetch("/api/files?path=" + encodeURIComponent(path));
+    const files = await res.json();
+    displayGrid(files, 'file', folderName);
+}
+
+function play(file) {
+    const modal = document.getElementById("modal");
+    const player = document.getElementById("player");
+    player.src = "/recordings/" + file;
+    modal.style.display = "flex";
+    player.play();
+}
+
+function closePlayer() {
+    const modal = document.getElementById("modal");
+    const player = document.getElementById("player");
+    player.pause();
+    player.src = "";
+    modal.style.display = "none";
+}
+
+loadTree();
+</script>
+</body>
+</html>
