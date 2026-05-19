@@ -34,7 +34,8 @@ function generateSID() {
    START RECORDING
 ========================= */
 app.post("/start", (req, res) => {
-  const { channel, channelKey, uid, participants, useProxy } = req.body;
+  const { channel, channelKey, uid, participants, useProxy, hostUid } =
+    req.body;
   console.log("useProxy", useProxy);
   const videoWidth = 640;
 
@@ -51,25 +52,6 @@ app.post("/start", (req, res) => {
     });
   }
 
-  //   const wmConfigs = participants
-  //     ? participants.map((p, i) => {
-  //         const userLeftX = i * videoWidth;
-
-  //         return {
-  //           config: {
-  //             litera: {
-  //               wm_litera: p.name,
-  //               font_size: 10,
-  //               offset_x: userLeftX + 20,
-  //               offset_y: 200,
-  //               wm_width: 150,
-  //               wm_height: 30,
-  //             },
-  //           },
-  //         };
-  //       })
-  //     : [];
-
   const wmConfigs = participants
     ? participants.map((p, i) => {
         const userLeftX = i * videoWidth;
@@ -77,12 +59,12 @@ app.post("/start", (req, res) => {
         return {
           config: {
             litera: {
-              wm_litera: p.name || "",
+              wm_litera: p.name,
               font_size: 10,
-              offset_x: p.config?.x || userLeftX + 20,
-              offset_y: p.config?.y || 200,
-              wm_width: p.config?.width || 150,
-              wm_height: p.config?.height || 30,
+              offset_x: userLeftX + 20,
+              offset_y: 200,
+              wm_width: 150,
+              wm_height: 30,
             },
           },
         };
@@ -112,6 +94,8 @@ app.post("/start", (req, res) => {
     wmConfigs.length.toString(),
     "--wmConfigs",
     JSON.stringify(wmConfigs),
+    "--hostUid",
+    hostUid,
   ];
 
   if (process.env.INTERNAL_PROXY && process.env.INTERNAL_PROXY.trim() !== "") {
