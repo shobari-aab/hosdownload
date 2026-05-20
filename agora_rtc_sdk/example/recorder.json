@@ -1,0 +1,24 @@
+{
+    "appId": "*****",
+    "token": "*****",
+    "channelName": "recorderTest",
+    "useStringUid": false,
+    "useCloudProxy": false,
+    "userId": "0",
+    "subAllAudio": true,
+    "subAllVideo": true,
+    "subStreamType":"high",
+    "isMix":true,
+    "layoutMode":"bestfit",
+    "recorderStreamType":"both",
+    "recorderPath":"recorderTest.mp4",
+    "audio":{
+        "sampleRate": 16000,
+        "numOfChannels": 1
+    },
+    "video":{
+        "width":1920,
+        "height":1080,
+        "fps":15
+    }
+}
