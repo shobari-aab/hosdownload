@@ -200,7 +200,11 @@ void RecorderEventHandler::onUserLeft(const char *channelId,agora::user_id_t uid
   
   {
     std::lock_guard<std::mutex> lock(mtx);
-    uids_.erase(uid);
+    size_t removed = uids_.erase(uid);
+    AG_LOG(INFO, "[DEBUG] onUserLeft: uid=%s removed=%zu remaining_uids=%zu", uid, removed, uids_.size());
+    for (const auto& id : uids_) {
+      AG_LOG(INFO, "[DEBUG] remaining uid: %s", id.c_str());
+    }
   }
 
   uid_resolutions_.erase(uid);
