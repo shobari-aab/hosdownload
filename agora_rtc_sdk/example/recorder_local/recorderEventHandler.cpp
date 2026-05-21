@@ -24,16 +24,40 @@ void RecorderEventHandler::setVideoMixLayout()
 
     std::vector<agora::rtc::UserMixerLayout> userLayouts;
 
-    // 1. REGION GUEST (Background - Layar Penuh)
+    // 1. REGION GUEST (Background - Layar Penuh, jaga aspek rasio)
     if (!config_.guestUid.empty() && config_.guestUid != "0") {
         agora::rtc::UserMixerLayout guest;
         guest.userId = config_.guestUid.c_str();
-        guest.config.x = 0;
-        guest.config.y = 0;
-        guest.config.width = config_.video.width;
-        guest.config.height = config_.video.height;
+
+        int guestX = 0, guestY = 0;
+        int guestW = config_.video.width;
+        int guestH = config_.video.height;
+
+        auto it = uid_resolutions_.find(config_.guestUid);
+        if (it != uid_resolutions_.end() && it->second.width > 0 && it->second.height > 0) {
+            float srcAspect    = (float)it->second.width  / it->second.height;
+            float canvasAspect = (float)config_.video.width / config_.video.height;
+            if (srcAspect < canvasAspect) {
+                // Video lebih sempit dari canvas (misal portrait) → pillarbox
+                guestH = config_.video.height;
+                guestW = (int)(config_.video.height * srcAspect);
+                guestX = (config_.video.width - guestW) / 2;
+                guestY = 0;
+            } else {
+                // Video lebih lebar dari canvas → letterbox
+                guestW = config_.video.width;
+                guestH = (int)(config_.video.width / srcAspect);
+                guestX = 0;
+                guestY = (config_.video.height - guestH) / 2;
+            }
+        }
+
+        guest.config.x      = guestX;
+        guest.config.y      = guestY;
+        guest.config.width  = guestW;
+        guest.config.height = guestH;
         guest.config.zOrder = 0;
-        guest.config.alpha = 1.0;
+        guest.config.alpha  = 1.0;
         userLayouts.push_back(guest);
     }
 
