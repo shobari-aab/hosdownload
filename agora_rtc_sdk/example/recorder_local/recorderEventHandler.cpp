@@ -122,10 +122,6 @@ bool RecorderEventHandler::isSubscribeStream(agora::user_id_t uid, bool isAudio)
 void RecorderEventHandler::onUserJoined(const char *channelId,agora::user_id_t uid)
 {
   AG_LOG(INFO, "onUserJoined, channelId: %s, uid: %s", channelId, uid);
-  {
-    std::lock_guard<std::mutex> lock(mtx);
-    uids_.insert(uid);
-  }
 
   agora::media::MediaRecorderStreamType streamType = agora::media::STREAM_TYPE_AUDIO;
   if(!config_.autoSubscribe){
@@ -172,6 +168,10 @@ void RecorderEventHandler::onUserJoined(const char *channelId,agora::user_id_t u
     } else {
       streamType = agora::media::STREAM_TYPE_BOTH;
     }
+  }
+  {
+    std::lock_guard<std::mutex> lock(mtx);
+    uids_.insert(uid);
   }
   AG_LOG(INFO, "uid: %s, recorder streamType: %d", uid, streamType);
 
