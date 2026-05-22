@@ -5,13 +5,13 @@ services:
     container_name: agora_recorder
 
     network_mode: "host"
-    shm_size: '2gb'
+    shm_size: "2gb"
 
     env_file:
       - ./controller/.env
 
     volumes:
-      - ./output:/app/output
+      - /home/agora-record:/app/output
 
     environment:
       NODE_ENV: production
@@ -28,4 +28,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
