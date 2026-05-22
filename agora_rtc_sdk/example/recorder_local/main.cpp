@@ -356,8 +356,8 @@ int main(int argc, char * const argv[])
   while (!g_bSignalStop) {
     usleep(100*1000);
     int userCount = eventHandler->getUidsCount();
-    AG_LOG(INFO, "Current joined user count: %d", userCount);
     if (userCount == 0) {
+      AG_LOG(INFO, "Current joined user count: %d", userCount);
       idleLimitMs -= 100;
       if (idleLimitMs <= 0) {
         AG_LOG(INFO, "No user joined for %d seconds, exiting...", config.idleLimitSec);
