@@ -1,0 +1,2 @@
+APPID: 0f41fbb2b3094220af9454ad30292fa8
+Secret : 6a74b5eb94ba4b5d9bdd2ef5a9163ea5
