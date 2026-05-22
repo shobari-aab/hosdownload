@@ -36,7 +36,7 @@ class RecorderEventHandler : public agora::rtc::IAgoraMediaRtcRecorderEventHandl
     void onActiveSpeaker(const char *channelId,agora::user_id_t userId){};
     void onUserVideoStateChanged(const char *channelId,agora::user_id_t userId, agora::rtc::REMOTE_VIDEO_STATE state, agora::rtc::REMOTE_VIDEO_STATE_REASON reason, int elapsed); 
     void onUserAudioStateChanged(const char *channelId,agora::user_id_t userId, agora::rtc::REMOTE_AUDIO_STATE state, agora::rtc::REMOTE_AUDIO_STATE_REASON reason, int elapsed); 
-    void onRemoteVideoStats(const char *channelId, agora::user_id_t userId, const agora::rtc::RemoteVideoStatistics& stats){};
+    void onRemoteVideoStats(const char *channelId, agora::user_id_t userId, const agora::rtc::RemoteVideoStatistics& stats);
     void onRemoteAudioStats(const char *channelId, agora::user_id_t userId, const agora::rtc::RemoteAudioStatistics& stats){}; 
     void onRecorderStateChanged(const char *channelId, agora::user_id_t userId, agora::media::RecorderState state, agora::media::RecorderReasonCode reason, const char* filename);
     void onRecorderInfoUpdated(const char *channelId, agora::user_id_t userId, const agora::media::RecorderInfo &info);

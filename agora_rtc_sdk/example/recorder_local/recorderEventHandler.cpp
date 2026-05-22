@@ -222,6 +222,29 @@ void RecorderEventHandler::onFirstRemoteVideoDecoded(const char *channelId,agora
   } 
 }
 
+void RecorderEventHandler::onRemoteVideoStats(const char *channelId, agora::user_id_t userId, const agora::rtc::RemoteVideoStatistics& stats)
+{
+  if (stats.width <= 0 || stats.height <= 0) return;
+
+  bool changed = false;
+  {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto it = uid_resolutions_.find(userId);
+    if (it == uid_resolutions_.end() || it->second.width != stats.width || it->second.height != stats.height) {
+      AG_LOG(INFO, "onRemoteVideoStats: resolution changed for uid=%s, %dx%d -> %dx%d",
+        userId,
+        it != uid_resolutions_.end() ? it->second.width : 0,
+        it != uid_resolutions_.end() ? it->second.height : 0,
+        stats.width, stats.height);
+      uid_resolutions_[userId] = {stats.width, stats.height};
+      changed = true;
+    }
+  }
+  if (changed && config_.isMix) {
+    setVideoMixLayout();
+  }
+}
+
 void RecorderEventHandler::onFirstRemoteAudioDecoded(const char *channelId,agora::user_id_t userId, int elapsed)
 {
   AG_LOG(INFO,"onFirstRemoteAudioDecoded, channelId: %s, userId: %s, elapsed: %d", channelId, userId, elapsed);
